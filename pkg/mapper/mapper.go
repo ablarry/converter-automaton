@@ -9,7 +9,24 @@ import (
 )
 
 // MapperFileToPA maps the csv file to Transactions struct
-func MapperFileToPA(file string) ([]*model.Transition, *model.MetaData, error) {
+func MapperFileToPA(file string) (*model.PushDownAutomaton, error) {
+	rows := ReadFile(file)
+	transitions := make([]*model.Transition, 0)
+	var metaData *model.MetaData = nil
+	for _, v := range rows {
+		if v[0] != "METADATA" {
+			t := MapperToTransition(v)
+			transitions = append(transitions, t)
+		} else {
+			// Validate that if value is METADATA we need to use another mapper
+			metaData = MapperToMetadata(v)
+		}
+	}
+	return &model.PushDownAutomaton{Transitions: transitions, MetaData: metaData}, nil
+}
+
+// MapperFileToPA maps the csv file to Transactions struct
+func MeapperFileToPA(file string) ([]*model.Transition, *model.MetaData, error) {
 	rows := ReadFile(file)
 	transitions := make([]*model.Transition, 0)
 	var metaData *model.MetaData = nil

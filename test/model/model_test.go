@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/ablarry/converter-automaton/pkg/mapper"
 	"github.com/ablarry/converter-automaton/pkg/model"
 	"github.com/stretchr/testify/assert"
@@ -9,9 +10,8 @@ import (
 )
 
 func TestCollectStates(t *testing.T) {
-	transitions, metadata, err := mapper.MapperFileToPA("./example2.pd")
+	p, err := mapper.MapperFileToPA("./example2.pd")
 	assert.Nil(t, err, "Error not excepcted")
-	p := &model.PushDownAutomaton{Transitions: transitions, MetaData: metadata}
 	p.CollectStates()
 	reflect.DeepEqual(p.States, []string{"g", "h", "f"})
 }
@@ -32,7 +32,7 @@ func TestPushDownAutomaton_CreateFirstRule(t *testing.T) {
 				MetaData: &model.MetaData{AcceptStates: []string{"h"}},
 			},
 			want: &map[string][]string{
-				"h": {"S", "f", "\\", "h"},
+				"S" + "f" + "\\" + "h": {"S", "f", "\\", "h"},
 			},
 		},
 		{name: "Creation First Rule two symbols of accept states - Ok",
@@ -40,8 +40,8 @@ func TestPushDownAutomaton_CreateFirstRule(t *testing.T) {
 				MetaData: &model.MetaData{AcceptStates: []string{"h", "i"}},
 			},
 			want: &map[string][]string{
-				"h": {"S", "f", "\\", "h"},
-				"i": {"S", "f", "\\", "i"},
+				"S" + "f" + "\\" + "h": {"S", "f", "\\", "h"},
+				"S" + "f" + "\\" + "i": {"S", "f", "\\", "i"},
 			},
 		},
 	}
@@ -228,6 +228,39 @@ func TestPushDownAutomaton_CreateFourthRule(t *testing.T) {
 		})
 	}
 }
+
+func TestPushDownAutomaton_FindContextGrammar(t *testing.T) {
+
+	// PushDown
+	p := &model.PushDownAutomaton{
+		Transitions: []*model.Transition{
+			&model.Transition{"f", "c", "\\", "c", "g"},
+			&model.Transition{"g", "b", "\\", "\\", "g"},
+			&model.Transition{"g", "c", "c", "\\", "h"},
+		},
+		MetaData: &model.MetaData{AcceptStates: []string{"h"}},
+	}
+	p.Build()
+
+	tests := []struct {
+		name string
+		arg  string
+		want bool
+	}{
+		{name: "Example 1",
+			arg:  "cbbc",
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := p.Find(tt.arg, ""); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Find() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestPushDownAutomaton_find(t *testing.T) {
 	p := model.PushDownAutomaton{
 		Transitions: []*model.Transition{
@@ -237,12 +270,41 @@ func TestPushDownAutomaton_find(t *testing.T) {
 		},
 		MetaData: &model.MetaData{AcceptStates: []string{"h"}},
 	}
-	p.CollectStates()
-	p.CreateFirstRule()
-	p.CreateSecondRule()
-	p.CreateThirdRule()
-	p.CreateFourthRule()
-	i := 10
-	level := &i
-	assert.True(t, p.Find("cbbc", "", level))
+	p.Build()
+	assert.True(t, p.Find("cbbc", ""))
+	assert.True(t, p.Find("cc", ""))
+	assert.False(t, p.Find("bb", ""))
+	assert.False(t, p.Find("cbb", ""))
+	assert.False(t, p.Find("bc", ""))
+	assert.True(t, p.Find("cbc", ""))
+	assert.True(t, p.Find("cbbbbbbbbbbbbbbbbbc", ""))
+}
+
+func TestPushDownAutomaton_find2(t *testing.T) {
+	p := &model.PushDownAutomaton{
+		Transitions: []*model.Transition{
+			&model.Transition{"a", "x", "\\", "x", "b"},
+			&model.Transition{"b", "y", "x", "\\", "c"},
+		},
+		MetaData: &model.MetaData{AcceptStates: []string{"c"}},
+	}
+	p.Build()
+	assert.True(t, p.Find("xy", ""))
+}
+
+func TestPushDownAutomaton_find3(t *testing.T) {
+	p := &model.PushDownAutomaton{
+		Transitions: []*model.Transition{
+			&model.Transition{"1", "b", "\\", "#", "2"},
+			&model.Transition{"2", "x", "\\", "x", "2"},
+			&model.Transition{"2", "y", "x", "\\", "3"},
+			&model.Transition{"3", "y", "x", "\\", "3"},
+			&model.Transition{"3", "b", "#", "\\", "4"},
+		},
+		MetaData: &model.MetaData{AcceptStates: []string{"4"}},
+	}
+	p.Build()
+	fmt.Println(p)
+	//	assert.True(t, p.Find("bxyb", ""), "Fail bxyb")
+	assert.True(t, p.Find("bxxyyb", ""), "Fail bxxyyb ")
 }

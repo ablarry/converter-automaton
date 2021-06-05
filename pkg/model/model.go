@@ -1,7 +1,9 @@
 package model
 
 import (
+	"fmt"
 	"github.com/ablarry/converter-automaton/pkg/util"
+	"log"
 	"strings"
 )
 
@@ -57,7 +59,7 @@ func (p *PushDownAutomaton) CreateFirstRule() *map[string][]string {
 	initialState := (p.Transitions)[0].InitialState
 	set := make(map[string][]string)
 	for _, v := range p.MetaData.AcceptStates {
-		set[v] = []string{"S", initialState, "\\", v}
+		set["S"+initialState+"\\"+v] = []string{"S", initialState, "\\", v}
 	}
 	p.Rules1 = set
 	return &set
@@ -119,69 +121,165 @@ func (p *PushDownAutomaton) CreateFourthRule() *map[string][]string {
 	return &set
 }
 
-// How to escape?
-func (p *PushDownAutomaton) Find(s, s2 string, level *int) bool {
+func (p *PushDownAutomaton) Build() {
+	p.CollectStates()
+	p.CreateFirstRule()
+	p.CreateSecondRule()
+	p.CreateThirdRule()
+	p.CreateFourthRule()
+}
+
+func FormatRule(i int, v []string) (string, string) {
+
+	var keyRule, equivalence string
+
+	if i == 1 {
+		rule := strings.Join(v, "")
+		keyRule = rule[0:1]
+		equivalence = rule[1:len(rule)]
+	} else if i == 2 {
+		keyRule = strings.Join(v[0:3], "")
+		equivalence = v[3]
+	} else if i == 3 {
+		rule := strings.Join(v, "")
+		keyRule = rule[0:3]
+		equivalence = rule[3:len(rule)]
+	} else if i == 4 {
+		rule := strings.Join(v, "")
+		keyRule = rule[0:3]
+		equivalence = rule[3:len(rule)]
+	}
+
+	return keyRule, equivalence
+}
+
+func (p *PushDownAutomaton) String() string {
+	var rules string
+
+	rules += fmt.Sprintf("\nRules 1:\n")
+	for _, v := range p.Rules1 {
+		keyRule, equivalence := FormatRule(1, v)
+		rules += fmt.Sprintf("\t %s --> %s \n", keyRule, equivalence)
+	}
+	rules += fmt.Sprintf("Rules 2:\n")
+	for _, v := range p.Rules2 {
+		keyRule, equivalence := FormatRule(2, v)
+		rules += fmt.Sprintf("\t %s --> %s \n", keyRule, equivalence)
+	}
+	rules += fmt.Sprintf("Rules 3:\n")
+	for _, v := range p.Rules3 {
+		keyRule, equivalence := FormatRule(3, v)
+		rules += fmt.Sprintf("\t %s --> %s \n", keyRule, equivalence)
+	}
+	rules += fmt.Sprintf("Rules 4:\n")
+	for _, v := range p.Rules4 {
+		keyRule, equivalence := FormatRule(4, v)
+		rules += fmt.Sprintf("\t %s --> %s \n", keyRule, equivalence)
+	}
+	return rules
+}
+
+func (p *PushDownAutomaton) Find(s, s2 string) bool {
 	if s2 == "" {
-		// iterate for rules without cost
-		for k := range p.Rules2 {
-			keyRule := k[0:3]
+		// Iterate for Rules2 without cost
+		for _, v := range p.Rules2 {
+			keyRule, _ := FormatRule(2, v)
 			rule := string(s[len(s)-1]) + keyRule
-			i := *level
-			if p.Find(s+keyRule, rule, &i) {
+			log.Println("Rule BASE 2 try" + "input: " + s + " call: " + s + keyRule)
+			if p.Find(s+keyRule, rule) {
+				log.Println("Initial Rule 2 applied " + "input: " + s + " call: " + s + keyRule)
 				return true
 			}
 		}
 		return false
 	} else {
 		// verify if s is equal S
+		for _, v := range p.Rules1 {
+			_, ruleTransform := FormatRule(1, v)
+			if s == ruleTransform {
+				log.Println("Rule 1 applied " + "input: " + s + " complement:" + s2)
+				return true
+			}
+		}
 
+		// Validation Rule 3
 		for _, v := range p.Rules3 {
-			rule := strings.Join(v, "")
-			keyRule := rule[0:3]
-			ruleTransform := rule[3:len(rule)]
-			if strings.HasSuffix(s, ruleTransform) {
-				// replace v in s
+			keyRule, ruleTransform := FormatRule(3, v)
+			if strings.Contains(s, ruleTransform) {
+				s_prev := s
 				s = util.Rev(strings.Replace(util.Rev(s), util.Rev(ruleTransform), util.Rev(keyRule), 1))
-				// replace v in s2
 				s2 = strings.Replace(s2, ruleTransform, keyRule, 1)
-				if p.Find(s, s2, level) {
+				if p.Find(s, s2) {
+					log.Println("Rule 3 applied " + "input: " + s_prev + " call: " + s + " complement:" + s2)
 					return true
 				}
 			}
 		}
+
+		// Validation Rule 4
 		for _, v := range p.Rules4 {
-			rule := strings.Join(v, "")
-			keyRule := rule[0:3]
-			ruleTransform := rule[3:len(rule)]
-			if strings.HasSuffix(s, ruleTransform) {
-				// replace v in s
+			keyRule, ruleTransform := FormatRule(4, v)
+			if strings.Contains(s, ruleTransform) {
+				s_prev := s
 				s = util.Rev(strings.Replace(util.Rev(s), util.Rev(ruleTransform), util.Rev(keyRule), 1))
-				// replace v in s2
 				//s2 = strings.Replace(s2, ruleTransform, keyRule, 1)
 				s2 = keyRule
-				if p.Find(s, s2, level) {
+				if p.Find(s, s2) {
+					log.Println("Rule 4 applied " + "input: " + s_prev + " call: " + s + " complement:" + s2)
 					return true
 				}
 			}
 		}
-		for k := range p.Rules2 {
-			keyRule := k[0:3]
+
+		// Validation Rule 2
+		for _, v := range p.Rules2 {
+			keyRule, _ := FormatRule(2, v)
 			r := util.Rev(strings.Replace(util.Rev(s), util.Rev(s2), util.Rev(keyRule+s2), 1))
-			r2 := keyRule + s2
 			for _, v4 := range p.Rules4 {
-				rule4 := strings.Join(v4, "")
-				ruleTransform := rule4[3:len(rule4)]
-				if strings.HasSuffix(r, ruleTransform) {
-					return p.Find(r, r2, level)
+				_, ruleTransform := FormatRule(4, v4)
+				if strings.Contains(r, ruleTransform) {
+					found := p.Find(r, keyRule)
+					if found {
+						log.Println("Rule 2 applied " + "input: " + s + " call: " + r + " complement:" + s2)
+					}
+					return found
 				}
 			}
+			for _, v := range p.Rules3 {
+				keyRule, ruleTransform := FormatRule(3, v)
+				if strings.Contains(r, ruleTransform) {
+					r_prev := r
+					r = util.Rev(strings.Replace(util.Rev(r), util.Rev(ruleTransform), util.Rev(keyRule), 1))
+					r2 := keyRule + s2
+					//r2 = strings.Replace(r2, ruleTransform, keyRule, 1)
+					if p.Find(r, r2) {
+						log.Println("Rule 3 applied " + "input: " + r_prev + " call: " + r + " complement:" + r2)
+						return true
+					}
+				}
+			}
+
 			r = util.Rev(strings.Replace(util.Rev(s), util.Rev(s2), util.Rev(s2+keyRule), 1))
-			r2 = s2 + keyRule
 			for _, v4 := range p.Rules4 {
-				rule4 := strings.Join(v4, "")
-				ruleTransform := rule4[3:len(rule4)]
-				if strings.HasSuffix(r, ruleTransform) {
-					return p.Find(r, r2, level)
+				_, ruleTransform := FormatRule(4, v4)
+				if strings.Contains(r, ruleTransform) {
+					found := p.Find(r, keyRule)
+					if found {
+						log.Println("Rule 2 applied " + "input: " + s + " call: " + r + " complement:" + s2)
+					}
+					return found
+				}
+			}
+			for _, v := range p.Rules3 {
+				keyRule, ruleTransform := FormatRule(3, v)
+				if strings.Contains(r, ruleTransform) {
+					r_prev := r
+					r = util.Rev(strings.Replace(util.Rev(r), util.Rev(ruleTransform), util.Rev(keyRule), 1))
+					r2 := s2 + keyRule
+					if p.Find(r, r2) {
+						log.Println("Rule 3 applied " + "input: " + r_prev + " call: " + r + " complement:" + r2)
+						return true
+					}
 				}
 			}
 		}

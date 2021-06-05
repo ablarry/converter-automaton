@@ -66,7 +66,6 @@ func TestMapperToMetadata(t *testing.T) {
 		})
 	}
 }
-
 func TestMapperFileToPA(t *testing.T) {
 	type args struct {
 		file string
@@ -74,26 +73,41 @@ func TestMapperFileToPA(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*model.Transition
-		want1   *model.MetaData
+		want    *model.PushDownAutomaton
 		wantErr bool
 	}{
-		{"TestMapperFileToPA - example2.pd", args{"./example2.pd"}, []*model.Transition{{InitialState: "g", ReadElement: "c", PullElement: "c", FinalState: "h", PushElement: "\\"},
-			{InitialState: "f", ReadElement: "c", PullElement: "\\", FinalState: "g", PushElement: "c"}},
-			&model.MetaData{AcceptStates: []string{"h"}}, false},
+		{name: "TestMapperFileToPA - example2.pd",
+			args: args{"./example2.pd"},
+			want: &model.PushDownAutomaton{
+				Transitions: []*model.Transition{
+					{
+						InitialState: "g",
+						ReadElement:  "c",
+						PullElement:  "c",
+						FinalState:   "h",
+						PushElement:  "\\",
+					},
+					{
+						InitialState: "f",
+						ReadElement:  "c",
+						PullElement:  "\\",
+						FinalState:   "g",
+						PushElement:  "c",
+					},
+				},
+				MetaData: &model.MetaData{AcceptStates: []string{"h"}},
+			},
+			wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := mapper.MapperFileToPA(tt.args.file)
+			got, err := mapper.MapperFileToPA(tt.args.file)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapperFileToPA() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MapperFileToPA() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("MapperFileToPA() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

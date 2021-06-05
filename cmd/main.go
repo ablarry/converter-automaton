@@ -1,24 +1,23 @@
 package main
 
 import (
-	"encoding/csv"
-	"fmt"
+	"github.com/ablarry/converter-automaton/pkg/mapper"
 	"log"
-	"strings"
+	"os"
 )
 
 func main() {
-	in := `first_name,last_name,sername
-"Rob","Pike",rob
-Ken,Thompson,ken
-"Robert","Griesemer","gri"
-`
-	r := csv.NewReader(strings.NewReader(in))
-
-	records, err := r.ReadAll()
-	if err != nil {
-		log.Fatal(err)
+	if len(os.Args) > 1 {
+		filePath := os.Args[1]
+		log.Print("FilePath:" + filePath)
+		p, err := mapper.MapperFileToPA(filePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		p.Build()
+		log.Println(p)
+		log.Println(p.Find("bxxyyb", ""))
+	} else {
+		log.Print("Add parameters")
 	}
-
-	fmt.Print(records)
 }
