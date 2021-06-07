@@ -260,3 +260,13 @@ Rule 3 applied input: bxxyy3\33#4 call: bxxy3x33#4 complement:3x33#4
 Rule 3 applied input: bxxyyb4\4 call: bxxyy3#4 complement:3#4
 Initial Rule 2 applied input: bxxyyb call: bxxyyb4\4
 ```
+
+
+### Format Pushdown automaton file
+The AP should be coded in a text file where each transition is written with the following format (a text file called, for example pushdown1.ap):
+```
+g,c,c;h,\
+f,c,\;g,c
+g,b,\;g,\
+```
+This is the description of the automaton shown in Figure 2.11 (page 94, Brookshear). Backslashes \ represent lambda, and each transition tuple represents:
