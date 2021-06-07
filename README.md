@@ -262,11 +262,12 @@ Initial Rule 2 applied input: bxxyyb call: bxxyyb4\4
 ```
 
 
-### Format Pushdown automaton file
+### Format Pushdown Automaton file
 The AP should be coded in a text file where each transition is written with the following format (a text file called, for example pushdown1.ap):
 ```
-g,c,c;h,\
+g,c,c;h,\state of origin, symbol read from the string, symbol read from the stack; state of destination, symbol inserted into stack.
 f,c,\;g,c
 g,b,\;g,\
 ```
 This is the description of the automaton shown in Figure 2.11 (page 94, Brookshear). Backslashes \ represent lambda, and each transition tuple represents:
+state of origin, symbol read from the string, symbol read from the stack; state of destination, symbol inserted into stack.
