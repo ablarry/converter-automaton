@@ -185,7 +185,6 @@ func (p *PushDownAutomaton) Find(s, s2 string) bool {
 		for _, v := range p.Rules2 {
 			keyRule, _ := FormatRule(2, v)
 			rule := string(s[len(s)-1]) + keyRule
-			log.Println("Rule BASE 2 try" + "input: " + s + " call: " + s + keyRule)
 			if p.Find(s+keyRule, rule) {
 				log.Println("Initial Rule 2 applied " + "input: " + s + " call: " + s + keyRule)
 				return true

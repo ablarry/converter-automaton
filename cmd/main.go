@@ -9,6 +9,7 @@ import (
 func main() {
 	if len(os.Args) > 1 {
 		filePath := os.Args[1]
+		strEval := os.Args[2]
 		log.Print("FilePath:" + filePath)
 		p, err := mapper.MapperFileToPA(filePath)
 		if err != nil {
@@ -16,7 +17,7 @@ func main() {
 		}
 		p.Build()
 		log.Println(p)
-		log.Println(p.Find("bxxyyb", ""))
+		log.Println(p.Find(strEval, ""))
 	} else {
 		log.Print("Add parameters")
 	}
