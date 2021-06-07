@@ -248,8 +248,7 @@ Rules 4:
 	 1\1 --> b2#22\1 
 	 1\1 --> b2#11\1 
 	 2x3 --> x2x22x3 
-	 2x3 --> x2x33x3 
-
+	 2x3 --> x2x33x3
 Rule 1 applied input: 1\4 complement:1\4
 Rule 4 applied input: b2#44\4 call: 1\4 complement:1\4
 Rule 2 applied input: b2#4 call: b2#44\4 complement:2#4
@@ -260,7 +259,7 @@ Rule 3 applied input: bxxyy3\33#4 call: bxxy3x33#4 complement:3x33#4
 Rule 3 applied input: bxxyyb4\4 call: bxxyy3#4 complement:3#4
 Initial Rule 2 applied input: bxxyyb call: bxxyyb4\4
 ```
-
+There are more examples in [model_test.go](/test/model/model_test.go)
 
 ### Format Pushdown Automaton file
 The AP should be coded in a text file where each transition is written with the following format (a text file called, for example pushdown1.ap):
